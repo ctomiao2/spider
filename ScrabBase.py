@@ -121,7 +121,11 @@ class ScrabChapterThread(threading.Thread):
 						iv = self.decrypt_params.get('iv', None)
 						padding = self.decrypt_params.get('padding', None)
 						txt = decrypt_content(txt, self.decrypt_params['key'], iv, padding, self.encode)
-
+					try:
+						txt = txt.decode(self.encode)
+					except:
+						pass
+					print 'ScrabBase::run', txt
 					if self.chapter_title_pattern:
 						chapter_title_ret = re.search(self.chapter_title_pattern, txt, re.S)
 						if chapter_title_ret:
@@ -170,11 +174,13 @@ class ScrabBase(object):
 		self.decrypt_params = kwargs.get('decrypt_params', None)
 
 	def write_to_file(self):
-		global cached_txt
 		# 等待当前批次都取完
 		for thread in self.threads:
 			thread.join()
-		
+		self.do_write_to_file()
+
+	def do_write_to_file(self):
+		global cached_txt
 		with codecs.open(self.book_name, 'a+', encoding=self.content_encode) as f:
 			while self.last_start_seq < self.seq:
 				#print cached_txt.get(self.last_start_seq, '')
@@ -227,6 +233,7 @@ class ScrabBase(object):
 		for h in chapter_hrefs:
 			url = h[0]
 			title = h[1]
+			#print 'ScrabBase::run', url, title
 			'''
 			if next_page_url and self.decrypt_params:
 				iv = self.decrypt_params.get('iv', None)
